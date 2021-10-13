@@ -23,25 +23,31 @@ class InstanceManager {
 	/** @var string */
 	private $authKey = '';
 
+	/** @var array */
+	private $instances = [];
+
 
 	/**
 	 * InstanceManager constructor.
 	 *
 	 * @param PDO $db
 	 * @param SignatureHandler $signatureHandler
-	 * @param bool $globalScaleMode
-	 * @param string $authKey
+	 * @param array $settings
 	 */
 	public function __construct(
 		PDO $db,
 		SignatureHandler $signatureHandler,
 		bool $globalScaleMode,
-		string $authKey
+		string $authKey,
+		?array $instances
 	) {
 		$this->db = $db;
 		$this->signatureHandler = $signatureHandler;
 		$this->globalScaleMode = $globalScaleMode;
 		$this->authKey = $authKey;
+		if (is_array($instances)) {
+			$this->instances = $instances;
+		}
 	}
 
 
@@ -110,6 +116,10 @@ class InstanceManager {
 	 * @return array
 	 */
 	public function getAll(): array {
+		if (is_array($this->instances) && !empty($this->instances)) {
+			return $this->instances;
+		}
+
 		$stmt = $this->db->prepare('SELECT instance FROM instances');
 		$stmt->execute();
 
@@ -122,6 +132,10 @@ class InstanceManager {
 		return $instances;
 	}
 
+
+	public function getAllFromConfig(): array {
+		return $this->instances;
+	}
 
 	/**
 	 * sync the instances from the users table
@@ -212,7 +226,9 @@ class InstanceManager {
 	 * @param string $cloudId
 	 */
 	public function newUser(string $cloudId): void {
-		list(, $instance) = explode('@', $cloudId, 2);
+		$pos = strrpos($cloudId, '@');
+		$instance = substr($cloudId, $pos + 1);
+
 		$this->insert($instance);
 	}
 
@@ -221,7 +237,8 @@ class InstanceManager {
 	 * @param string $cloudId
 	 */
 	public function removingUser(string $cloudId): void {
-		list(, $instance) = explode('@', $cloudId, 2);
+		$pos = strrpos($cloudId, '@');
+		$instance = substr($cloudId, $pos + 1);
 
 		$this->removingEmptyInstance($instance);
 	}
