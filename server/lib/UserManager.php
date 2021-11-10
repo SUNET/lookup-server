@@ -150,7 +150,7 @@ FROM (
 	WHERE userId IN (
 		SELECT DISTINCT userId
 		FROM `store`
-		WHERE v ' . $operator . ' :search ' . $constraint .'
+		WHERE v ' . $operator . ' :search ' . $constraint .' AND k = "userid"
 	)
 	GROUP BY userId
 ) AS tmp
